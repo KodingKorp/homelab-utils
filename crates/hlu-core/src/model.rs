@@ -75,12 +75,26 @@ pub struct DeviceNames {
 }
 
 /// An open TCP port found during a deep scan, with a best-effort service/app identification.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+///
+/// Two layers of identity: `service` is the *protocol/role* (HTTP, HTTPS, SSH, Redis…), always a
+/// best guess from the well-known-port table and refined by any banner; `product` is the *concrete
+/// application* (Grafana, Proxmox VE, OpenSSH, nginx…), set only on a confident banner or
+/// HTTP-fingerprint match. UIs should prefer `product` and fall back to `service`.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ServicePort {
     /// The open port number.
     pub port: u16,
-    /// Identified service/application (from the well-known-port table and/or banner), if known.
+    /// Protocol/role (HTTP, HTTPS, SSH, Redis…) from the well-known-port table and/or banner.
     pub service: Option<String>,
+    /// Concrete application/product, when confidently identified (e.g. "Grafana", "OpenSSH").
+    #[serde(default)]
+    pub product: Option<String>,
+    /// Product version, when derivable from a banner or `Server:` header (e.g. "9.6p1", "1.25.3").
+    #[serde(default)]
+    pub version: Option<String>,
+    /// Web page `<title>` for HTTP(S) services, normalized and length-capped.
+    #[serde(default)]
+    pub title: Option<String>,
     /// First line of any banner / HTTP status read from the port.
     pub banner: Option<String>,
 }
@@ -288,6 +302,34 @@ mod tests {
     fn clean_hostname_strips_local_suffix() {
         assert_eq!(clean_hostname("rpi.local."), "rpi");
         assert_eq!(clean_hostname("host."), "host");
+    }
+
+    #[test]
+    fn service_port_deserializes_legacy_json_without_new_fields() {
+        // A row persisted before product/version/title existed must still load (fields default
+        // to None), since devices are stored as full JSON blobs in SQLite.
+        let legacy = r#"{"port":80,"service":"HTTP","banner":"HTTP/1.1 200 OK"}"#;
+        let sp: ServicePort = serde_json::from_str(legacy).unwrap();
+        assert_eq!(sp.port, 80);
+        assert_eq!(sp.service.as_deref(), Some("HTTP"));
+        assert_eq!(sp.product, None);
+        assert_eq!(sp.version, None);
+        assert_eq!(sp.title, None);
+
+        // Full round-trip keeps every field.
+        let full = ServicePort {
+            port: 3000,
+            service: Some("HTTP".into()),
+            product: Some("Grafana".into()),
+            version: Some("10.4.0".into()),
+            title: Some("Grafana".into()),
+            banner: Some("HTTP/1.1 302 Found".into()),
+        };
+        let json = serde_json::to_string(&full).unwrap();
+        let back: ServicePort = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.product.as_deref(), Some("Grafana"));
+        assert_eq!(back.version.as_deref(), Some("10.4.0"));
+        assert_eq!(back.title.as_deref(), Some("Grafana"));
     }
 
     #[test]

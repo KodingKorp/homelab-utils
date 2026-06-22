@@ -428,6 +428,28 @@ body {
 .port-service {
   color: var(--text);
 }
+.port-version {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 12px;
+}
+.port-proto {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+.port-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.port-title {
+  color: var(--text);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .port-banner {
   color: var(--text-dim);
   font-size: 12px;

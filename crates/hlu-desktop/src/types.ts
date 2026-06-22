@@ -28,6 +28,9 @@ export interface SshInfo {
 export interface ServicePort {
   port: number;
   service: string | null;
+  product: string | null;
+  version: string | null;
+  title: string | null;
   banner: string | null;
 }
 

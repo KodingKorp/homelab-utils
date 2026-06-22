@@ -34,6 +34,11 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tokio = { version = "1", default-features = false }
 # Clipboard. default-features=false drops the image-data tree; text clipboard still works.
 arboard = { version = "3", default-features = false }
+# TLS client for probing HTTPS service UIs (self-signed certs are the homelab norm). The `ring`
+# backend (not the default aws-lc-rs) needs no cmake/C build and the published crate ships
+# pregenerated assembly, so it compiles on Windows MSVC without NASM. Re-exports its rustls as
+# `tokio_rustls::rustls`, so we never depend on a second, version-skewed `rustls`.
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
 
 # Internal crates referenced by path so the workspace is self-contained.
 hlu-core = { path = "crates/hlu-core", version = "0.1.0" }

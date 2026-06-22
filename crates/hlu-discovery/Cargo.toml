@@ -21,6 +21,7 @@ mdns-sd = "0.20.0"
 serde.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "net", "time", "macros", "sync", "io-util"] }
+tokio-rustls = { workspace = true }
 tracing.workspace = true
 
 [package.metadata.dist]

@@ -139,8 +139,17 @@ function PortCard({
           {device.services.map((s) => (
             <div className="service-row" key={s.port}>
               <span className="port-num mono">{s.port}</span>
-              <span className="port-service">{s.service ?? "unknown"}</span>
-              {s.banner && <span className="port-banner mono">{s.banner}</span>}
+              <span className="port-service">
+                {s.product ?? s.service ?? "unknown"}
+                {s.version && <span className="port-version"> {s.version}</span>}
+                {s.product && s.service && (
+                  <span className="port-proto"> · {s.service}</span>
+                )}
+              </span>
+              <span className="port-detail">
+                {s.title && <span className="port-title">{s.title}</span>}
+                {s.banner && <span className="port-banner mono">{s.banner}</span>}
+              </span>
             </div>
           ))}
         </div>

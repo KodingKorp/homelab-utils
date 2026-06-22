@@ -1,6 +1,7 @@
 //! Tauri commands — the bridge between the React frontend and the discovery engine + store.
 
 use std::net::IpAddr;
+use std::time::Duration;
 
 use hlu_core::{Device, ServicePort, unix_now};
 use hlu_discovery::portscan::{self, COMMON_PORTS, PortScanConfig};
@@ -95,13 +96,28 @@ pub async fn scan_ports(
     full: Option<bool>,
 ) -> CmdResult<Vec<ServicePort>> {
     let addr: IpAddr = ip.parse().map_err(|_| format!("invalid ip: {ip}"))?;
-    let config = PortScanConfig::default();
 
     // Default to the fast common-ports scan; full 1–65535 only when explicitly requested.
-    let ports: Vec<u16> = if full.unwrap_or(false) {
+    let full = full.unwrap_or(false);
+    let ports: Vec<u16> = if full {
         (1..=65535).collect()
     } else {
         COMMON_PORTS.to_vec()
+    };
+
+    // A full sweep is dominated by the per-connect wait on filtered ports (throughput ≈
+    // concurrency / connect_timeout). On a LAN a live host answers in ~1 ms, so for the full range
+    // we use a tighter timeout and a wider worker pool than the WAN-safe defaults. (Windows still
+    // rate-limits outbound connects, so this helps but a 65535 sweep is never instant — a raw/SYN
+    // "deep scan" mode would be the real fix.)
+    let config = if full {
+        PortScanConfig {
+            concurrency: 800,
+            connect_timeout: Duration::from_millis(150),
+            ..Default::default()
+        }
+    } else {
+        PortScanConfig::default()
     };
     let services = portscan::scan_host(addr, ports, &config).await;
 
