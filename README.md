@@ -1,94 +1,111 @@
 # homelab-utils
 
-> A native, blazing-fast desktop cockpit for your homelab — discover devices, name them, check SSH, and connect in one click. No server to deploy, no YAML to maintain.
+> A native, blazing-fast desktop cockpit for your homelab — discover devices, name them, check SSH, scan ports, and connect in one click. No server to deploy, no YAML to maintain.
 
+[![CI](https://github.com/KodingKorp/homelab-utils/actions/workflows/ci.yml/badge.svg)](https://github.com/KodingKorp/homelab-utils/actions/workflows/ci.yml)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 
-`homelab-utils` is an open-source desktop app (and a set of lightweight CLI/daemon
-binaries) for managing the machines, projects, and apps running on your local network.
-It opens in under a second, auto-discovers devices on your LAN, gives them sensible
-names, tells you which ones are reachable over SSH, and lets you copy a ready-to-paste
-`ssh` command — all from a single installable app that updates itself from GitHub.
+`homelab-utils` is an open-source desktop app (plus lightweight CLI tools) for managing the
+machines, projects, and apps on your local network. It opens in under a second, auto-discovers
+devices on your LAN, gives them sensible names, tells you which are reachable over SSH, scans
+their ports to identify running applications, and lets you copy a ready-to-paste `ssh` command —
+all from a single installable app that updates itself from GitHub.
 
-Where comparable tools (Beszel, NetAlertX, Komodo, Homepage, Homarr, …) are self-hosted
-Docker web apps configured through YAML or a database, `homelab-utils` is a **native,
-zero-deploy, zero-config desktop app**.
+Where comparable tools (Beszel, NetAlertX, Komodo, Homepage, Homarr, …) are self-hosted Docker
+web apps configured through YAML or a database, `homelab-utils` is a **native, zero-deploy,
+zero-config desktop app**.
 
-## Status
+> 🚧 **Early development.** The discovery + SSH + port-scanning tools work today. Cross-device
+> comms binaries come next.
 
-🚧 **Early development.** The first milestone is local device discovery + SSH detection.
-Cross-device discovery and comms binaries come after.
+## Features
 
-## Features (first milestone)
-
-- 🔎 **Privilege-free LAN discovery** — mDNS/DNS-SD, UPnP/SSDP, a bounded TCP sweep, and
-  the OS ARP cache. No admin rights required for the default scan.
-- 🏷️ **Auto-naming** — merges mDNS hostnames, UPnP friendly names, reverse-DNS, and MAC
-  vendor (OUI) lookups into a stable display name you can override.
-- 🔐 **SSH detection** — a fast, handshake-free banner probe distinguishes *port reachable*
-  from *confirmed SSH*, and parses an OS hint from the banner.
-- 📋 **One-click SSH command** — copies `ssh user@host` (with a heuristic, editable username)
-  to your clipboard.
-- ⬆️ **Auto-update** — the desktop app updates itself from GitHub Releases.
+- 🔎 **Device discovery** — privilege-free LAN scan (mDNS/DNS-SD, UPnP/SSDP, a bounded TCP sweep,
+  and the OS ARP cache). No admin rights required. Auto-refreshes on launch.
+- 🏷️ **Auto-naming** — merges mDNS hostnames, UPnP friendly names, reverse-DNS, and MAC vendor
+  (OUI) lookups into a stable display name you can override.
+- 🔐 **SSH detection** — a fast, handshake-free banner probe distinguishes *port reachable* from
+  *confirmed SSH*, parses an OS hint, and copies `ssh user@host` to your clipboard (editable
+  username, remembered per device).
+- 🛠️ **Ports & Services** — scans a host's ports (fast common-port set by default, or full
+  1–65535) and identifies the running application per port via a well-known-port table, banner
+  grabbing, and an HTTP probe.
+- ⬆️ **Auto-update** — the desktop app updates itself from GitHub Releases (wiring in place;
+  signing enabled before public launch).
 
 ## Architecture
 
-A single Cargo **workspace** with one package per shippable artifact, so the heavy desktop
-GUI dependency tree never compiles into the lightweight CLI/daemon binaries.
+A single Cargo **workspace** with one package per shippable artifact, so the heavy desktop GUI
+dependency tree never compiles into the lightweight CLI/daemon binaries.
 
 ```
 crates/
   hlu-core/          # GUI-free domain model + persistence (shared by everything)
-  hlu-discovery/     # async discovery + SSH-probe engine (tokio). No GUI deps.
+  hlu-discovery/     # async discovery + SSH-probe + port-scan engine (tokio). No GUI deps.
   hlu-discover-cli/  # `hlu-discover` — standalone CLI over the engine
-  hlu-desktop/       # Tauri 2 desktop app (Rust backend + React/TypeScript UI)
+  hlu-desktop/       # Tauri 2 desktop app
+    src-tauri/       #   Rust backend (commands bridge the engine to the UI)
+    src/             #   React + TypeScript frontend (Vite); tools live in src/views/
 ```
 
 | Layer | Choice |
 |---|---|
-| Desktop shell | [Tauri 2](https://tauri.app) (Rust core + WebView) |
+| Desktop shell | [Tauri 2](https://tauri.app) (Rust core + system WebView) |
 | Frontend | React + TypeScript + Vite |
 | Async runtime | tokio |
+| Storage | SQLite (`rusqlite`) working store + JSON export |
 | Auto-update | `tauri-plugin-updater` (GUI) · `dist` + `axoupdater` (CLI binaries) |
 
-## Building from source
+See **[AGENTS.md](AGENTS.md)** for the full developer/contributor guide (build commands,
+conventions, how to add a tool, and platform gotchas) — written so both humans and AI coding
+agents can work on the project effectively.
 
-Prerequisites: a recent **Rust** stable toolchain (≥ 1.85 for edition 2024), **Node.js**
-≥ 18, and the platform [Tauri prerequisites](https://tauri.app/start/prerequisites/)
-(on Windows: WebView2, preinstalled on Windows 11).
+## Quickstart
+
+**Prerequisites:** a recent **Rust** stable toolchain (≥ 1.85, for edition 2024), **Node.js** ≥ 18,
+and the platform [Tauri prerequisites](https://tauri.app/start/prerequisites/) (on Windows:
+WebView2, preinstalled on Windows 11).
 
 ```bash
-# Rust workspace (libs + CLI)
-cargo build --workspace
+# Clone
+git clone https://github.com/KodingKorp/homelab-utils.git
+cd homelab-utils
 
-# Standalone discovery CLI
-cargo run -p hlu-discover-cli
-
-# Desktop app (dev)
+# Desktop app (dev) — opens the native window with hot reload
 cd crates/hlu-desktop
 npm install
 npm run tauri dev
+
+# …or the standalone discovery CLI (from the repo root)
+cargo run -p hlu-discover-cli            # table output
+cargo run -p hlu-discover-cli -- --json  # JSON
 ```
 
-> **Windows note:** Smart App Control may block freshly-compiled, unreputed build-script
-> executables during the first Tauri build (`os error 4551`). Re-running the build, or
-> `cargo clean -p <crate>` then rebuilding, usually lets it through once the reputation check
-> clears. CI runners are unaffected.
+Build a release bundle/installer: `cd crates/hlu-desktop && npm run tauri build`.
 
 ## Releasing & auto-update
 
 Push a tag (`git tag v0.1.0 && git push --tags`) to trigger
-[`.github/workflows/release.yml`](.github/workflows/release.yml):
+[`.github/workflows/release.yml`](.github/workflows/release.yml): `tauri-action` builds and bundles
+the desktop app for Windows/macOS/Linux, and the `hlu-discover` CLI is built per-platform — all
+attached to a draft GitHub Release.
 
-- The **desktop app** is built and bundled for Windows/macOS/Linux via `tauri-action` and
-  attached to a draft GitHub Release.
-- The **`hlu-discover` CLI** is built per-platform and attached to the same release.
-
-Auto-update signing is intentionally deferred: enable it before public launch by generating
-updater keys (`npm run tauri signer generate`), adding the public key + endpoint to
-`tauri.conf.json`, setting `bundle.createUpdaterArtifacts = true`, and adding the private key
-as a repo secret (see the comments in `release.yml`). Code-signing/notarization
+Auto-update signing is intentionally deferred until before public launch (generate updater keys,
+add the public key + endpoint to `tauri.conf.json`, enable `bundle.createUpdaterArtifacts`, and add
+the private key as a repo secret — see the comments in `release.yml`). OS code-signing
 (Apple Developer ID, Windows Authenticode) is a separate, later step.
+
+## Contributing
+
+Contributions are welcome! Please read **[AGENTS.md](AGENTS.md)** first — it documents the build/
+test/lint commands, the architecture rules (e.g. keep `hlu-core` GUI-free; one package per
+binary), and how to add a new tool to the app. Before opening a PR, make sure these pass:
+
+```bash
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+```
 
 ## License
 
@@ -97,9 +114,9 @@ Licensed under either of
 - Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
 - MIT license ([LICENSE-MIT](LICENSE-MIT))
 
-at your option. Unless you explicitly state otherwise, any contribution intentionally
-submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall
-be dual licensed as above, without any additional terms or conditions.
+at your option. Unless you explicitly state otherwise, any contribution intentionally submitted for
+inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above,
+without any additional terms or conditions.
 
 ---
 
