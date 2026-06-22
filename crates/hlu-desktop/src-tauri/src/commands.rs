@@ -1,6 +1,9 @@
 //! Tauri commands — the bridge between the React frontend and the discovery engine + store.
 
-use hlu_core::Device;
+use std::net::IpAddr;
+
+use hlu_core::{Device, ServicePort, unix_now};
+use hlu_discovery::portscan::{self, COMMON_PORTS, PortScanConfig};
 use hlu_discovery::{ScanConfig, discover};
 use tauri::{AppHandle, State};
 use tauri_plugin_clipboard_manager::ClipboardExt;
@@ -80,6 +83,41 @@ pub fn set_username(state: State<'_, AppState>, id: String, user: Option<String>
         .set_username(&id, user.as_deref())
         .map_err(|e| e.to_string())?;
     Ok(())
+}
+
+/// Deep-scan a host's TCP ports and identify running services. With `full` (default), scans the
+/// entire 1–65535 range; otherwise just the common homelab ports. Persists results onto the
+/// matching device and returns them.
+#[tauri::command]
+pub async fn scan_ports(
+    state: State<'_, AppState>,
+    ip: String,
+    full: Option<bool>,
+) -> CmdResult<Vec<ServicePort>> {
+    let addr: IpAddr = ip.parse().map_err(|_| format!("invalid ip: {ip}"))?;
+    let config = PortScanConfig::default();
+
+    // Default to the fast common-ports scan; full 1–65535 only when explicitly requested.
+    let ports: Vec<u16> = if full.unwrap_or(false) {
+        (1..=65535).collect()
+    } else {
+        COMMON_PORTS.to_vec()
+    };
+    let services = portscan::scan_host(addr, ports, &config).await;
+
+    // Persist the results onto the matching device (looked up by IP).
+    {
+        let store = state.store.lock().map_err(lock_err)?;
+        if let Ok(devices) = store.all() {
+            if let Some(mut device) = devices.into_iter().find(|d| d.ip.to_string() == ip) {
+                device.services = services.clone();
+                device.ports_scanned_at = Some(unix_now());
+                let _ = store.upsert(&device);
+            }
+        }
+    }
+
+    Ok(services)
 }
 
 /// Build the `ssh` command for a device and copy it to the clipboard; returns the command.

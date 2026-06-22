@@ -25,6 +25,12 @@ export interface SshInfo {
   suggested_users: string[];
 }
 
+export interface ServicePort {
+  port: number;
+  service: string | null;
+  banner: string | null;
+}
+
 export interface Device {
   id: string;
   ip: string;
@@ -36,6 +42,8 @@ export interface Device {
   status: DeviceStatus;
   ssh: SshInfo;
   open_ports: number[];
+  services: ServicePort[];
+  ports_scanned_at: number | null;
   first_seen: number;
   last_seen: number;
 }

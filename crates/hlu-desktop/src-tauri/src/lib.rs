@@ -17,10 +17,15 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        // Auto-update is wired (dependency + CI) but not activated until updater keys exist.
+        // To enable: generate keys (`npm run tauri signer generate`), add `plugins.updater`
+        // (pubkey + GitHub endpoint) to tauri.conf.json, set bundle.createUpdaterArtifacts =
+        // true, then uncomment the line below. See .github/workflows/release.yml.
+        // .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(state::AppState::new())
         .invoke_handler(tauri::generate_handler![
             commands::scan,
+            commands::scan_ports,
             commands::list_devices,
             commands::set_custom_name,
             commands::set_username,

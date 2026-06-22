@@ -74,6 +74,17 @@ pub struct DeviceNames {
     pub netbios: Option<String>,
 }
 
+/// An open TCP port found during a deep scan, with a best-effort service/app identification.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServicePort {
+    /// The open port number.
+    pub port: u16,
+    /// Identified service/application (from the well-known-port table and/or banner), if known.
+    pub service: Option<String>,
+    /// First line of any banner / HTTP status read from the port.
+    pub banner: Option<String>,
+}
+
 /// A single discovered device on the local network.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Device {
@@ -96,8 +107,14 @@ pub struct Device {
     pub status: DeviceStatus,
     /// SSH probe details.
     pub ssh: SshInfo,
-    /// Open TCP ports observed during the sweep.
+    /// Open TCP ports observed during the quick discovery sweep.
     pub open_ports: Vec<u16>,
+    /// Deep port-scan results: open ports with identified services (populated by the Ports tool).
+    #[serde(default)]
+    pub services: Vec<ServicePort>,
+    /// Unix seconds of the last deep port scan, if any.
+    #[serde(default)]
+    pub ports_scanned_at: Option<i64>,
     /// Unix seconds when first discovered.
     pub first_seen: i64,
     /// Unix seconds of the most recent sighting.
@@ -119,6 +136,8 @@ impl Device {
             status: DeviceStatus::Online,
             ssh: SshInfo::default(),
             open_ports: Vec::new(),
+            services: Vec::new(),
+            ports_scanned_at: None,
             first_seen: now,
             last_seen: now,
         }

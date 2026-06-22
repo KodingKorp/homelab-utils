@@ -34,50 +34,135 @@ body {
   font-size: 14px;
 }
 
-.app {
+/* ---- app shell: left nav + content ---- */
+.shell {
+  display: flex;
+  height: 100%;
+}
+
+.sidebar {
+  width: 212px;
+  flex-shrink: 0;
+  background: var(--bg-elev);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  height: 100%;
-  max-width: 980px;
-  margin: 0 auto;
-  padding: 20px;
-  gap: 16px;
+  padding: 16px 12px;
+  gap: 6px;
 }
 
-/* ---- top bar ---- */
-.topbar {
+.sidebar-brand {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 8px 14px;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.sidebar-title {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.2px;
 }
 
 .brand-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 8px;
   background:
     radial-gradient(circle at 50% 50%, #fff 2px, transparent 3px),
-    radial-gradient(circle at 50% 50%, transparent 9px, var(--accent) 10px, transparent 12px),
+    radial-gradient(circle at 50% 50%, transparent 8px, var(--accent) 9px, transparent 11px),
     linear-gradient(135deg, var(--accent), #0b3b53);
   box-shadow: 0 0 0 1px var(--border) inset;
 }
 
-.topbar h1 {
-  font-size: 17px;
-  margin: 0;
-  letter-spacing: 0.2px;
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
 }
 
-.tagline {
-  margin: 0;
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.nav-item:hover {
+  background: var(--bg-elev-2);
+  color: var(--text);
+}
+.nav-item.active {
+  background: var(--bg-elev-2);
+  color: var(--text);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.nav-icon {
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-footer {
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 8px 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ---- a tool's content pane ---- */
+.tool {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 22px;
+  gap: 16px;
+}
+
+.tool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tool-header h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.tool-sub {
+  margin: 2px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+  padding: 24px;
 }
 
 .scan-btn {
@@ -279,6 +364,82 @@ body {
 .copy-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* ---- ports & services ---- */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle input {
+  accent-color: var(--accent);
+}
+
+.port-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.port-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.device-name-static {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.services {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.service-row {
+  display: grid;
+  grid-template-columns: 56px 150px 1fr;
+  align-items: baseline;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 13px;
+}
+.port-num {
+  color: var(--accent);
+  font-weight: 600;
+  text-align: right;
+}
+.port-service {
+  color: var(--text);
+}
+.port-banner {
+  color: var(--text-dim);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.services-empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
 }
 
 /* ---- toast ---- */

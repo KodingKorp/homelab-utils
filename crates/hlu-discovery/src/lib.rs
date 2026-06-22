@@ -8,6 +8,7 @@
 pub mod arp;
 pub mod mdns;
 pub mod oui;
+pub mod portscan;
 pub mod rdns;
 pub mod ssh;
 pub mod subnet;
@@ -171,18 +172,25 @@ pub async fn discover(config: &ScanConfig) -> Result<Vec<Device>> {
     Ok(devices)
 }
 
-/// Probe SSH on port 22 (when open) and populate the device's [`hlu_core::SshInfo`].
+/// Probe SSH on port 22 for the device and populate its [`hlu_core::SshInfo`].
+///
+/// We always probe 22 directly rather than gating on the broad sweep's result: the sweep can
+/// miss port 22 on a slow or heavily-loaded host, and a device may be discovered via mDNS/ARP
+/// without any sweep hit at all. A dedicated probe with a slightly longer timeout reliably marks
+/// SSH-ready hosts (e.g. a Mac mini with Remote Login enabled).
 async fn enrich_ssh(device: &mut Device, config: &ScanConfig) {
-    if config.enable_ssh_probe && device.open_ports.contains(&22) {
-        let result = ssh::probe(device.ip, 22, config.connect_timeout).await;
-        device.ssh.port = Some(22);
-        device.ssh.status = result.status;
-        device.ssh.banner = result.banner;
-        device.ssh.suggested_users =
-            suggest_usernames(result.os_hint.as_deref(), config.current_user.as_deref());
-        device.ssh.os_hint = result.os_hint;
-    } else {
+    if !config.enable_ssh_probe {
         device.ssh.status = SshStatus::Unknown;
         device.ssh.suggested_users = suggest_usernames(None, config.current_user.as_deref());
+        return;
     }
+
+    let timeout = config.connect_timeout.max(Duration::from_millis(1200));
+    let result = ssh::probe(device.ip, 22, timeout).await;
+    device.ssh.port = Some(22);
+    device.ssh.status = result.status;
+    device.ssh.banner = result.banner;
+    device.ssh.suggested_users =
+        suggest_usernames(result.os_hint.as_deref(), config.current_user.as_deref());
+    device.ssh.os_hint = result.os_hint;
 }

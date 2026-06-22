@@ -14,7 +14,7 @@ pub mod store;
 
 pub use error::{CoreError, Result};
 pub use model::{
-    Device, DeviceNames, DeviceStatus, MacAddr, SshInfo, SshStatus, build_ssh_command,
+    Device, DeviceNames, DeviceStatus, MacAddr, ServicePort, SshInfo, SshStatus, build_ssh_command,
     clean_hostname, suggest_usernames, unix_now,
 };
 pub use store::Store;

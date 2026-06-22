@@ -1,7 +1,7 @@
 // Thin wrappers around the Tauri command bridge. Keys match the Rust command parameter names.
 
 import { invoke } from "@tauri-apps/api/core";
-import type { Device } from "./types";
+import type { Device, ServicePort } from "./types";
 
 export function scan(opts?: {
   enableMdns?: boolean;
@@ -15,6 +15,10 @@ export function scan(opts?: {
 
 export function listDevices(): Promise<Device[]> {
   return invoke<Device[]>("list_devices");
+}
+
+export function scanPorts(ip: string, full = true): Promise<ServicePort[]> {
+  return invoke<ServicePort[]>("scan_ports", { ip, full });
 }
 
 export function setCustomName(id: string, name: string | null): Promise<void> {
