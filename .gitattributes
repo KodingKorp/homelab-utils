@@ -1,0 +1,13 @@
+# Normalize line endings to LF in the repo and on checkout (consistent across the
+# Windows/macOS/Linux CI matrix; avoids rustfmt/diff churn).
+* text=auto eol=lf
+
+# Binary assets — never normalize.
+*.png binary
+*.ico binary
+*.icns binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.woff binary
+*.woff2 binary

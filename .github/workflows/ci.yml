@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  # Lint + test the lightweight, GUI-free crates on all three platforms.
+  rust:
+    name: Rust core (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: cargo clippy -p hlu-core -p hlu-discovery -p hlu-discover-cli --all-targets
+      - name: Test
+        run: cargo test -p hlu-core -p hlu-discovery -p hlu-discover-cli
+      - name: Dependency-bloat guard (no GUI tree in the CLI)
+        shell: bash
+        run: |
+          if cargo tree -p hlu-discover-cli | grep -Eiq 'tauri|wry|webview|wgpu'; then
+            echo "::error::hlu-discover-cli pulled in a GUI dependency"; exit 1
+          fi
+
+  # Build the desktop app (Rust backend + frontend) on all three platforms.
+  desktop:
+    name: Desktop build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux WebView/build deps
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev patchelf
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build frontend
+        working-directory: crates/hlu-desktop
+        run: |
+          npm ci
+          npm run build
+      - name: Clippy + build desktop backend
+        run: cargo clippy -p hlu-desktop --all-targets

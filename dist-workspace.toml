@@ -1,0 +1,24 @@
+# cargo-dist (dist) configuration for the standalone CLI/daemon binaries.
+#
+# This is a starting template. Run `dist init` once (https://opensource.axo.dev/cargo-dist/)
+# to pin `cargo-dist-version` to your installed dist and (re)generate the GitHub release
+# workflow. dist auto-detects binary packages and skips crates marked
+# `[package.metadata.dist] dist = false` — so it builds `hlu-discover` and ignores the libs
+# and the Tauri desktop app (which ships via tauri-action in .github/workflows/release.yml).
+#
+# `install-updater = true` ships axoupdater alongside the CLI for GitHub-Releases self-update.
+
+[workspace]
+members = ["cargo:."]
+
+[dist]
+# cargo-dist-version = "x.y.z"   # set by `dist init`
+ci = "github"
+installers = ["shell", "powershell"]
+targets = [
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+    "x86_64-unknown-linux-gnu",
+    "x86_64-pc-windows-msvc",
+]
+install-updater = true

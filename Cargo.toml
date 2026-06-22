@@ -1,0 +1,53 @@
+# Virtual workspace manifest for homelab-utils.
+# No [package] here on purpose: each shippable artifact is its own crate under crates/,
+# so the heavy desktop GUI dependency tree never compiles into the lightweight binaries.
+[workspace]
+resolver = "3"
+# Explicit list (not a glob): the desktop app's Rust crate lives under its frontend root at
+# crates/hlu-desktop/src-tauri, following Tauri's conventional layout.
+members = [
+    "crates/hlu-core",
+    "crates/hlu-discovery",
+    "crates/hlu-discover-cli",
+    "crates/hlu-desktop/src-tauri",
+]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KodingKorp/homelab-utils"
+homepage = "https://github.com/KodingKorp/homelab-utils"
+authors = ["KodingKorp"]
+rust-version = "1.85"
+
+# Single source of truth for shared dependency versions. Members opt in with
+# `dep = { workspace = true }`. default-features = false is set here so lightweight
+# members can keep their feature set minimal (required by the Rust 2024 edition).
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tokio = { version = "1", default-features = false }
+# Clipboard. default-features=false drops the image-data tree; text clipboard still works.
+arboard = { version = "3", default-features = false }
+
+# Internal crates referenced by path so the workspace is self-contained.
+hlu-core = { path = "crates/hlu-core", version = "0.1.0" }
+hlu-discovery = { path = "crates/hlu-discovery", version = "0.1.0" }
+
+# Lints are inherited only by members that declare `[lints] workspace = true`.
+[workspace.lints.rust]
+unsafe_code = "warn"
+
+[workspace.lints.clippy]
+uninlined_format_args = "allow"
+
+# Release tuning applies to every member: smaller, faster binaries.
+[profile.release]
+lto = "thin"
+strip = true
+codegen-units = 1

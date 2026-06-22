@@ -1,0 +1,103 @@
+name: Release
+
+# Tag a release: `git tag v0.1.0 && git push --tags`
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # Build, bundle, and publish the desktop app for every platform via tauri-action.
+  desktop:
+    name: Desktop (${{ matrix.os }} ${{ matrix.args }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            args: "--target aarch64-apple-darwin"
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            args: "--target x86_64-apple-darwin"
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            args: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux WebView/build deps
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev patchelf
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install frontend deps
+        working-directory: crates/hlu-desktop
+        run: npm ci
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # ---- Auto-update signing (enable before public launch) ----
+          # 1. Generate keys:  npm --prefix crates/hlu-desktop run tauri signer generate
+          # 2. Add the public key to crates/hlu-desktop/src-tauri/tauri.conf.json under
+          #    plugins.updater.pubkey, set bundle.createUpdaterArtifacts = true, and add the
+          #    updater endpoint (GitHub latest.json).
+          # 3. Store the private key + password as repo secrets and uncomment below.
+          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: crates/hlu-desktop
+          tagName: ${{ github.ref_name }}
+          releaseName: "Homelab Utils ${{ github.ref_name }}"
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  # Build and attach the standalone discovery CLI for each platform.
+  cli:
+    name: CLI (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --release -p hlu-discover-cli --target ${{ matrix.target }}
+      - name: Package
+        shell: bash
+        run: |
+          bin="hlu-discover"
+          src="target/${{ matrix.target }}/release/${bin}"
+          [ -f "${src}.exe" ] && src="${src}.exe"
+          out="hlu-discover-${{ matrix.target }}"
+          [ -f "${src}" ] && cp "${src}" "${out}$([[ "${src}" == *.exe ]] && echo .exe)"
+          ls -la hlu-discover-*
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: hlu-discover-${{ matrix.target }}*

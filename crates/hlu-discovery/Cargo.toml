@@ -1,0 +1,27 @@
+[package]
+name = "hlu-discovery"
+description = "Async LAN discovery and SSH-probe engine for homelab-utils. No GUI dependencies."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+dns-lookup = "3.0.1"
+hlu-core.workspace = true
+local-ip-address = "0.6.13"
+mac_oui = { version = "0.4.11", features = ["with-db"] }
+mdns-sd = "0.20.0"
+serde.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "net", "time", "macros", "sync", "io-util"] }
+tracing.workspace = true
+
+[package.metadata.dist]
+dist = false
