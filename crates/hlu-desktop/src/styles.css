@@ -442,6 +442,68 @@ body {
   padding-top: 8px;
 }
 
+/* ---- update banner ---- */
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 16px 16px 0;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: rgba(20, 184, 166, 0.12);
+  border: 1px solid var(--accent);
+}
+.update-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.update-notes {
+  color: var(--text-dim);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60ch;
+}
+.update-error {
+  color: var(--red);
+  font-size: 12px;
+}
+.update-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.update-progress {
+  color: var(--accent);
+  font-size: 13px;
+  font-family: ui-monospace, monospace;
+}
+
+/* ---- settings ---- */
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 420px;
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-status {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 10px;
+}
+
 /* ---- toast ---- */
 .toast {
   position: fixed;

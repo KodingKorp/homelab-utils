@@ -144,8 +144,25 @@ match the Rust command parameter names), TS types in `src/types.ts` mirror `hlu-
 
 - `ci.yml`: fmt + clippy + test of the core crates on Win/macOS/Linux (+ a GUI-bloat guard), and a
   desktop build (frontend + `cargo clippy -p hlu-desktop`) on all three OSes.
-- `release.yml`: on a `v*` tag, `tauri-action` bundles the app per-OS and builds the CLI; both are
-  attached to a draft Release. Updater signing is documented inline and enabled before public launch.
+- `release.yml`: on a `v*` tag, `tauri-action` builds + bundles the app per-OS, **signs the update
+  artifacts and generates `latest.json`**, and publishes a GitHub Release; the CLI is built and
+  attached too.
+
+## Auto-update
+
+The desktop app self-updates from GitHub Releases (Tauri updater plugin). The flow:
+`src/updater.ts` (`checkForUpdate`/`applyUpdate`) → `App.tsx` auto-checks once on launch and renders
+`src/components/UpdateBanner.tsx`; `src/views/SettingsView.tsx` has a manual check. Updates are
+**minisign-verified** against `plugins.updater.pubkey` in `tauri.conf.json`.
+
+To ship an update: **bump `version` in `tauri.conf.json` (and `package.json`)**, commit, then
+`git tag vX.Y.Z && git push --tags`. CI signs and publishes; installed apps pick it up on next
+launch. Requires the repo secret `TAURI_SIGNING_PRIVATE_KEY` (minisign private key) — **back it up;
+losing it breaks updates for all installed apps**. The version in `tauri.conf.json` is the source of
+truth the updater compares against, so it MUST be bumped per release. OS code-signing
+(Apple Developer ID / Windows Authenticode) is still deferred — installs show OS warnings, and macOS
+auto-update is only fully smooth once notarized; the updater itself works on Windows and Linux
+AppImage unsigned.
 
 ## Commits & PRs
 

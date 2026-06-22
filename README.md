@@ -30,8 +30,9 @@ zero-config desktop app**.
 - 🛠️ **Ports & Services** — scans a host's ports (fast common-port set by default, or full
   1–65535) and identifies the running application per port via a well-known-port table, banner
   grabbing, and an HTTP probe.
-- ⬆️ **Auto-update** — the desktop app updates itself from GitHub Releases (wiring in place;
-  signing enabled before public launch).
+- ⬆️ **Auto-update** — the desktop app checks GitHub Releases on launch and updates itself
+  (minisign-verified), with a prompt and a manual "Check for updates" in Settings. (OS install
+  warnings remain until code-signing is added.)
 
 ## Architecture
 
@@ -85,15 +86,23 @@ Build a release bundle/installer: `cd crates/hlu-desktop && npm run tauri build`
 
 ## Releasing & auto-update
 
-Push a tag (`git tag v0.1.0 && git push --tags`) to trigger
-[`.github/workflows/release.yml`](.github/workflows/release.yml): `tauri-action` builds and bundles
-the desktop app for Windows/macOS/Linux, and the `hlu-discover` CLI is built per-platform — all
-attached to a draft GitHub Release.
+To ship an update: bump `version` in `crates/hlu-desktop/src-tauri/tauri.conf.json` (and
+`package.json`), commit, then tag:
 
-Auto-update signing is intentionally deferred until before public launch (generate updater keys,
-add the public key + endpoint to `tauri.conf.json`, enable `bundle.createUpdaterArtifacts`, and add
-the private key as a repo secret — see the comments in `release.yml`). OS code-signing
-(Apple Developer ID, Windows Authenticode) is a separate, later step.
+```bash
+git tag v0.1.1 && git push --tags
+```
+
+That triggers [`.github/workflows/release.yml`](.github/workflows/release.yml): `tauri-action`
+builds and bundles the desktop app for Windows/macOS/Linux, **signs the update artifacts and
+generates `latest.json`**, and publishes a GitHub Release; the `hlu-discover` CLI is built and
+attached too. Installed apps detect the new version on next launch (or via Settings → Check for
+updates) and update themselves.
+
+**Required once:** add the repo secret `TAURI_SIGNING_PRIVATE_KEY` (the minisign private key from
+`npm run tauri signer generate`). Back the key up — if it's lost, installed apps can no longer
+validate updates. OS code-signing (Apple Developer ID notarization, Windows Authenticode) is a
+separate, later step that removes the install-time SmartScreen/Gatekeeper warnings.
 
 ## Contributing
 

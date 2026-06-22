@@ -1,15 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { DevicesView } from "./views/DevicesView";
 import { PortsView } from "./views/PortsView";
-import { ToolPlaceholder } from "./views/ToolPlaceholder";
+import { SettingsView } from "./views/SettingsView";
+import { UpdateBanner } from "./components/UpdateBanner";
+import { checkForUpdate, type Update } from "./updater";
 import { GearIcon, PortsIcon, RadarIcon } from "./icons";
+
+// Context passed to each tool's render so it can surface an available update to the app shell.
+type ToolContext = { onUpdateFound: (update: Update) => void };
 
 type Tool = {
   id: string;
   label: string;
   icon: ReactNode;
-  render: () => ReactNode;
+  render: (ctx: ToolContext) => ReactNode;
 };
 
 // The tool registry. Add a new homelab tool by appending one entry here — the left nav and
@@ -31,18 +36,26 @@ const TOOLS: Tool[] = [
     id: "settings",
     label: "Settings",
     icon: <GearIcon />,
-    render: () => (
-      <ToolPlaceholder
-        title="Settings"
-        hint="Scan options, elevated 'deep scan' mode, and auto-update preferences will live here."
-      />
-    ),
+    render: (ctx) => <SettingsView onUpdateFound={ctx.onUpdateFound} />,
   },
 ];
 
+// Check for an update at most once per app launch.
+let autoChecked = false;
+
 export function App() {
   const [activeId, setActiveId] = useState(TOOLS[0].id);
+  const [update, setUpdate] = useState<Update | null>(null);
   const active = TOOLS.find((t) => t.id === activeId) ?? TOOLS[0];
+
+  useEffect(() => {
+    if (autoChecked) return;
+    autoChecked = true;
+    // Silent on failure (e.g. no published release yet / offline) — Settings has a manual check.
+    checkForUpdate()
+      .then((u) => u && setUpdate(u))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="shell">
@@ -68,7 +81,12 @@ export function App() {
         <div className="sidebar-footer">v0.1.0</div>
       </aside>
 
-      <main className="content">{active.render()}</main>
+      <main className="content">
+        {update && (
+          <UpdateBanner update={update} onDismiss={() => setUpdate(null)} />
+        )}
+        {active.render({ onUpdateFound: setUpdate })}
+      </main>
     </div>
   );
 }

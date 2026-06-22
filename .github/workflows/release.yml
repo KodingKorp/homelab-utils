@@ -50,19 +50,18 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # ---- Auto-update signing (enable before public launch) ----
-          # 1. Generate keys:  npm --prefix crates/hlu-desktop run tauri signer generate
-          # 2. Add the public key to crates/hlu-desktop/src-tauri/tauri.conf.json under
-          #    plugins.updater.pubkey, set bundle.createUpdaterArtifacts = true, and add the
-          #    updater endpoint (GitHub latest.json).
-          # 3. Store the private key + password as repo secrets and uncomment below.
-          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Updater signing. Requires the repo secret TAURI_SIGNING_PRIVATE_KEY (contents of the
+          # minisign private key from `npm run tauri signer generate`). The key was generated
+          # without a password, so the password secret may be unset/empty.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: crates/hlu-desktop
           tagName: ${{ github.ref_name }}
           releaseName: "Homelab Utils ${{ github.ref_name }}"
-          releaseDraft: true
+          # Published (not draft) so the `releases/latest/download/latest.json` updater endpoint
+          # serves it. tauri-action generates + uploads latest.json (createUpdaterArtifacts is on).
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
 

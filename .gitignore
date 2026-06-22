@@ -14,8 +14,9 @@ crates/hlu-desktop/node_modules
 # Tauri generated
 crates/hlu-desktop/src-tauri/gen
 
-# Signing keys / secrets — never commit
+# Signing keys / secrets — never commit (the updater PUBLIC key lives in tauri.conf.json)
 *.key
+*.key.pub
 *.pem
 *.p12
 *.pfx
