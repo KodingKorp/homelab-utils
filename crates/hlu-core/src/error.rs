@@ -20,6 +20,10 @@ pub enum CoreError {
     /// The platform did not yield a usable application data directory.
     #[error("could not determine an application data directory")]
     NoDataDir,
+
+    /// A stored row failed an internal consistency check (e.g. an unknown enum token).
+    #[error("data integrity error: {0}")]
+    Integrity(String),
 }
 
 /// Convenience alias for results in this crate.

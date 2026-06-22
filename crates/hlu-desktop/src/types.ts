@@ -50,3 +50,19 @@ export interface Device {
   first_seen: number;
   last_seen: number;
 }
+
+export type AuthMethod = "password" | "key";
+
+/** Non-secret view of a saved credential — never carries the password itself. */
+export interface CredentialMeta {
+  mac: string;
+  auth_method: AuthMethod;
+  has_password: boolean;
+  key_path: string | null;
+}
+
+/** A terminal emulator detected on this machine. */
+export interface TerminalInfo {
+  id: string;
+  display: string;
+}

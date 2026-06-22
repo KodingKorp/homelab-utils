@@ -34,11 +34,31 @@ hlu-core.workspace = true
 hlu-discovery.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+thiserror.workspace = true
 tauri = { version = "2.11.3", features = [] }
 tauri-plugin-clipboard-manager = "2.3.2"
+tauri-plugin-dialog = "2"
 tauri-plugin-process = "2.3.1"
 tauri-plugin-shell = "2.3.5"
 tauri-plugin-updater = "2.10.1"
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
+# Credential encryption: a random master key in the OS keychain seals passwords with
+# XChaCha20-Poly1305; only ciphertext + nonce are persisted. These are all pure-Rust /
+# windows-sys based — no NASM/cmake/C toolchain needed (matches the tokio-rustls ring note).
+keyring = { version = "3.6", features = [
+    "apple-native",
+    "windows-native",
+    "sync-secret-service",
+    "linux-native-sync-persistent",
+] }
+chacha20poly1305 = "0.10"
+zeroize = "1"
+# Modular terminal launcher: detect installed emulators and quote shell-string launchers safely.
+which = "8"
+shell-words = "1"
+
+# Mark a copied password as sensitive so Windows excludes it from Clipboard History / cloud sync.
+[target.'cfg(windows)'.dependencies]
+clipboard-win = "5"

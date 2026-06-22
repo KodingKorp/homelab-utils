@@ -4,8 +4,11 @@
 //! and exposes [`commands`] to the React frontend. Heavy work (network scanning) runs in the
 //! `hlu-discovery` engine; this layer is just glue + persistence.
 
+mod clipboard;
 mod commands;
+mod crypto;
 mod state;
+mod terminals;
 
 /// Build and run the desktop application.
 pub fn run() {
@@ -16,6 +19,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         // Auto-update from GitHub Releases (minisign-verified against the pubkey in tauri.conf.json).
         // tauri-plugin-process provides relaunch() after an update is installed.
@@ -26,9 +30,19 @@ pub fn run() {
             commands::scan,
             commands::scan_ports,
             commands::list_devices,
+            commands::remove_device,
             commands::set_custom_name,
             commands::set_username,
             commands::copy_ssh_command,
+            commands::set_ssh_password,
+            commands::set_ssh_key,
+            commands::clear_credential,
+            commands::get_credential_meta,
+            commands::copy_ssh_password,
+            commands::list_terminals,
+            commands::get_default_terminal,
+            commands::set_default_terminal,
+            commands::open_ssh_terminal,
         ])
         .run(tauri::generate_context!())
         .expect("error while running the homelab-utils desktop app");

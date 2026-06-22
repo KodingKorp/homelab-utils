@@ -210,6 +210,74 @@ impl Device {
     }
 }
 
+/// How a saved SSH credential authenticates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AuthMethod {
+    /// A stored password, encrypted at rest.
+    Password,
+    /// A path to a private key file on disk.
+    Key,
+}
+
+impl AuthMethod {
+    /// The token stored in the `auth_method` column.
+    pub fn as_db_str(self) -> &'static str {
+        match self {
+            AuthMethod::Password => "password",
+            AuthMethod::Key => "key",
+        }
+    }
+
+    /// Parse the `auth_method` column token.
+    pub fn from_db_str(s: &str) -> Option<Self> {
+        match s {
+            "password" => Some(AuthMethod::Password),
+            "key" => Some(AuthMethod::Key),
+            _ => None,
+        }
+    }
+}
+
+/// A persisted SSH credential for a device, keyed by MAC.
+///
+/// This type is **crypto-agnostic**: `hlu-core` treats `pw_cipher`/`pw_nonce` as opaque bytes.
+/// Encryption, decryption, and the key material live entirely in the desktop app, so neither the
+/// core crate nor the lightweight CLI that links it ever gains a crypto dependency.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StoredCredential {
+    /// Device MAC — the stable identity, equal to [`Device::id`] when a MAC is known.
+    pub mac: String,
+    /// Whether this credential is a password or an on-disk key.
+    pub auth_method: AuthMethod,
+    /// AEAD ciphertext of the password (`None` for key auth).
+    pub pw_cipher: Option<Vec<u8>>,
+    /// AEAD nonce used for `pw_cipher` (`None` for key auth).
+    pub pw_nonce: Option<Vec<u8>>,
+    /// Path to a private key file (`None` for password auth).
+    pub key_path: Option<String>,
+    /// Unix seconds when first stored.
+    pub created_at: i64,
+    /// Unix seconds of the most recent update.
+    pub updated_at: i64,
+}
+
+/// Non-secret view of a stored credential, safe to hand to the UI.
+///
+/// Deliberately omits the ciphertext: the plaintext password is only ever reachable through a
+/// dedicated command that decrypts server-side and writes straight to the clipboard.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CredentialMeta {
+    /// Device MAC this metadata describes.
+    pub mac: String,
+    /// Whether the stored credential is a password or a key path.
+    pub auth_method: AuthMethod,
+    /// True when a password ciphertext is present.
+    pub has_password: bool,
+    /// The stored key path, if this is key auth.
+    pub key_path: Option<String>,
+}
+
 /// Format an `ssh` command, only emitting `-p` when the port is non-standard.
 pub fn build_ssh_command(host: &str, user: &str, port: u16) -> String {
     if port == 22 {
