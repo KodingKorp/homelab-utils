@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { getVersion } from "@tauri-apps/api/app";
 import { DevicesView } from "./views/DevicesView";
 import { PortsView } from "./views/PortsView";
 import { SettingsView } from "./views/SettingsView";
@@ -46,9 +47,13 @@ let autoChecked = false;
 export function App() {
   const [activeId, setActiveId] = useState(TOOLS[0].id);
   const [update, setUpdate] = useState<Update | null>(null);
+  const [version, setVersion] = useState("");
   const active = TOOLS.find((t) => t.id === activeId) ?? TOOLS[0];
 
   useEffect(() => {
+    getVersion()
+      .then((v) => setVersion(`v${v}`))
+      .catch(() => setVersion(""));
     if (autoChecked) return;
     autoChecked = true;
     // Silent on failure (e.g. no published release yet / offline) — Settings has a manual check.
@@ -78,7 +83,7 @@ export function App() {
           ))}
         </nav>
 
-        <div className="sidebar-footer">v0.1.0</div>
+        <div className="sidebar-footer">{version}</div>
       </aside>
 
       <main className="content">
