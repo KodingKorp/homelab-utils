@@ -1,8 +1,8 @@
 # CLAUDE.md
 
 This project's contributor and architecture guide lives in **[AGENTS.md](AGENTS.md)** — read it
-first. It covers the repo map, build/test/lint commands, architecture rules, how to add a tool, and
-platform gotchas.
+first. It covers the repo map, build/test/lint commands, architecture rules, how to add a tool,
+how issues are tracked, and platform gotchas.
 
 ## Quick reference
 
@@ -32,3 +32,5 @@ cargo run -p hlu-discover-cli                 # discovery CLI
   the Ports tool defaults to common ports for this reason.
 - SSH usernames are heuristics (never knowable pre-auth); the four `SshStatus` states are distinct
   on purpose — preserve that distinction in UI.
+- **Issues are tracked on GitHub Issues** (not in-repo files): list with `gh issue list`, read with
+  `gh issue view <N>`, file with `gh issue create`. See AGENTS.md → Issue tracking.

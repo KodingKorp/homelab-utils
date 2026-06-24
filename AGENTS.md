@@ -164,6 +164,26 @@ truth the updater compares against, so it MUST be bumped per release. OS code-si
 auto-update is only fully smooth once notarized; the updater itself works on Windows and Linux
 AppImage unsigned.
 
+## Issue tracking
+
+Issues, bugs, and feature requests live on **GitHub Issues**, not as files in this repo:
+<https://github.com/KodingKorp/homelab-utils/issues>.
+
+Read and file them with the GitHub CLI (`gh`) — this is the easiest path for AI agents:
+
+```bash
+gh issue list                                                  # open issues
+gh issue list --state all --json number,title,state,labels     # machine-readable
+gh issue view <N>                                              # full body of issue #N
+gh issue view <N> --comments
+gh search issues --repo KodingKorp/homelab-utils "<query>"
+gh issue create --title "<title>" --body "<markdown>"          # file a new one
+```
+
+`gh` needs to be authenticated with `repo` scope (`gh auth status`); without it, use the Issues tab
+in a browser. Reference issues from commits/PRs as `#N` (e.g. `Fix scan reconcile (#1)`), and use
+`Closes #N` / `Fixes #N` in a PR body to auto-close on merge.
+
 ## Commits & PRs
 
 Small, focused commits with clear messages. Ensure the pre-PR gate passes. Keep this file and the
